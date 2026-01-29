@@ -1,0 +1,263 @@
+/* 1. IMPORT FONT CAO CẤP TỪ GOOGLE */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* BẢNG MÀU HIỆN ĐẠI (MODERN PALETTE) */
+    --primary: #435ebe;       /* Màu chủ đạo: Xanh Indigo */
+    --primary-dark: #25396f;  /* Màu chữ đậm */
+    --primary-light: #f2f7ff; /* Màu nền phụ */
+    --accent: #57caeb;        /* Màu điểm nhấn (Cyan) */
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --body-bg: #f3f5f9;       /* Màu nền toàn trang (Xám xanh rất nhạt) */
+    --card-bg: #ffffff;
+    --text-color: #555555;
+    
+    /* CẤU HÌNH GIAO DIỆN */
+    --sidebar-width: 280px;   /* Sidebar rộng hơn chút cho thoáng */
+    --header-height: 80px;
+    --radius: 16px;           /* Bo góc lớn (xu hướng hiện đại) */
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* Bóng mờ tinh tế */
+    --shadow-hover: 0 15px 35px rgba(67, 94, 190, 0.15);
+}
+
+/* --- CẤU TRÚC CƠ BẢN --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif; /* Font chữ tròn trịa, hiện đại */
+    background-color: var(--body-bg);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    overflow-x: hidden;
+}
+
+#wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+/* --- SIDEBAR (THANH MENU TRÁI) --- */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--card-bg);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    /* Loại bỏ viền kẻ, dùng bóng mờ để ngăn cách */
+    box-shadow: 4px 0 20px rgba(0,0,0,0.02); 
+    padding: 25px 20px;
+    overflow-y: auto;
+    transition: all 0.3s;
+}
+
+/* Logo Clinic Pro */
+.sidebar h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    text-align: center;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Menu Items */
+.nav-menu {
+    list-style: none;
+    padding: 0;
+}
+
+.nav-item {
+    padding: 15px 20px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border-radius: 12px; /* Bo góc nút menu */
+    transition: all 0.3s ease;
+    color: #607080;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none; /* Bỏ gạch chân nếu dùng thẻ a */
+}
+
+/* Icon trong menu */
+.nav-item i {
+    font-size: 1.2rem;
+    width: 25px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+/* Hiệu ứng Hover */
+.nav-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.nav-item:hover i {
+    transform: translateX(3px); /* Icon nảy nhẹ sang phải */
+}
+
+/* Trạng thái Active (Đang chọn) */
+.nav-item.active {
+    background: linear-gradient(45deg, var(--primary), #5b73d1); /* Màu gradient sang chảnh */
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(67, 94, 190, 0.4); /* Bóng màu xanh */
+}
+
+/* --- MAIN CONTENT (NỘI DUNG CHÍNH) --- */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 30px 40px; /* Tăng khoảng cách lề cho thoáng */
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- CARDS & STATS (KHỐI THÔNG TIN) --- */
+.card {
+    background: var(--card-bg);
+    border: none !important; /* Bỏ viền đen xấu xí */
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+/* Hiệu ứng nhấc lên khi di chuột vào card */
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stat-card {
+    padding: 25px;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%; /* Icon hình tròn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+/* Màu sắc nền icon (Soft Colors) */
+.icon-blue { background-color: #e3f2fd; color: #2196f3; }
+.icon-orange { background-color: #fff3e0; color: #ff9800; }
+.icon-green { background-color: #e8f5e9; color: #4caf50; }
+.icon-purple { background-color: #f3e5f5; color: #9c27b0; }
+
+.stat-info h5 {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.stat-info h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+/* --- TABLES (BẢNG DỮ LIỆU) --- */
+.table-responsive {
+    border-radius: var(--radius);
+}
+
+.table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.table thead th {
+    background-color: #f8faff; /* Nền tiêu đề bảng nhạt */
+    color: #607080;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 20px !important;
+    border-bottom: none;
+    letter-spacing: 0.5px;
+}
+
+.table tbody td {
+    padding: 20px !important;
+    color: #444;
+    border-bottom: 1px solid #f1f1f1;
+    font-weight: 500;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #fcfdff; /* Màu nền khi di chuột vào dòng */
+}
+
+/* --- BUTTONS (NÚT BẤM) --- */
+.btn {
+    padding: 10px 24px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+    transition: all 0.3s !important;
+}
+
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 10px rgba(67, 94, 190, 0.2);
+}
+
+.btn-primary:hover {
+    background-color: #354a9b !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(67, 94, 190, 0.3);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    color: #fff;
+}
+
+/* --- HEADER CARD --- */
+.card-header {
+    background-color: transparent !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    padding: 20px 25px !important;
+}
+
+.card-header h5 {
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+/* --- TYPOGRAPHY UTILS --- */
+.text-primary { color: var(--primary) !important; }
+.fw-bold { font-weight: 700 !important; }

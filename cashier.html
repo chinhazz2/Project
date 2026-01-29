@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thu ngân - Clinic Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main-content">
+        <h3 class="fw-bold text-primary mb-4">
+            <i class="fa-solid fa-cash-register me-2"></i>Thu ngân & Thanh toán
+        </h3>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="card stat-card mb-4 bg-primary text-white">
+                    <div class="d-flex align-items-center text-white">
+                        <div class="stat-icon bg-white bg-opacity-25 text-white me-3">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white-50 mb-0">Hóa đơn chờ thanh toán</h5>
+                            <h2 class="mb-0 text-white" id="countWaiting">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0 text-primary">Danh sách hóa đơn</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-3">Mã KH</th>
+                                        <th>Bệnh nhân</th>
+                                        <th>Ngày khám</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="encounterTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0" id="billBox" style="display:none; border-top: 5px solid var(--primary) !important;">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h5 class="fw-bold">HÓA ĐƠN DỊCH VỤ</h5>
+                            <small class="text-muted">Clinic Pro System</small>
+                        </div>
+                        <hr class="border-dashed">
+                        
+                        <div class="mb-3">
+                            <ul id="billItems" class="list-unstyled mb-0">
+                                </ul>
+                        </div>
+                        
+                        <hr class="border-dashed">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="fw-bold text-secondary">TỔNG CỘNG:</span>
+                            <span class="fw-bold text-primary fs-4" id="totalAmount">0</span>
+                        </div>
+
+                        <button class="btn btn-success w-100 py-2 fw-bold" onclick="pay()">
+                            <i class="fa-solid fa-check-circle me-2"></i>Xác nhận thanh toán
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="billPlaceholder" class="text-center text-muted mt-5">
+                    <i class="fa-solid fa-receipt fa-4x mb-3 text-light"></i>
+                    <p>Chọn một hóa đơn để xem chi tiết</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="main.js"></script>
+    <script>
+        let currentInvoiceId = null;
+
+        window.onload = async function() {
+            await loadSidebar();
+            loadEncounters();
+        };
+
+        async function loadEncounters() {
+            const res = await fetch('http://localhost/clinic/api/cashier_encounters.php');
+            const data = await res.json();
+            const tbody = document.getElementById('encounterTable');
+            document.getElementById('countWaiting').innerText = data.data.length;
+
+            if(data.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Không có hóa đơn chờ.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.data.map(e => `
+                <tr>
+                    <td class="ps-3 fw-bold">#${e.encounter_id}</td>
+                    <td>${e.patient_name}</td>
+                    <td><small>${new Date(e.encounter_date).toLocaleDateString('vi-VN')}</small></td>
+                    <td class="fw-bold text-primary">${new Intl.NumberFormat('vi-VN').format(e.total_amount || 0)}</td>
+                    <td><span class="badge bg-warning text-dark">Chưa thanh toán</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewBill(${e.encounter_id})">
+                            Chọn
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewBill(encounterId) {
+            const res = await fetch(`http://localhost/clinic/api/billing.php?encounter_id=${encounterId}`);
+            const data = await res.json();
+            
+            currentInvoiceId = data.invoice_id;
+            
+            // Hiển thị box hóa đơn, ẩn placeholder
+            document.getElementById('billBox').style.display = 'block';
+            document.getElementById('billPlaceholder').style.display = 'none';
+
+            const ul = document.getElementById('billItems');
+            ul.innerHTML = data.items.map(i => `
+                <li class="d-flex justify-content-between mb-2">
+                    <span>${i.name} <small class="text-muted">x${i.qty}</small></span>
+                    <span class="fw-bold">${new Intl.NumberFormat('vi-VN').format(i.subtotal)}</span>
+                </li>
+            `).join('');
+
+            document.getElementById('totalAmount').innerText = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.total_amount);
+        }
+
+        async function pay() {
+            if(!confirm('Xác nhận khách đã thanh toán tiền mặt?')) return;
+            
+            const res = await fetch('http://localhost/clinic/api/pay.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `invoice_id=${currentInvoiceId}&method=Tien mat`
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                alert('✅ Thanh toán thành công!');
+                document.getElementById('billBox').style.display = 'none';
+                document.getElementById('billPlaceholder').style.display = 'block';
+                loadEncounters();
+            } else {
+                alert(data.error);
+            }
+        }
+    </script>
+</body>
+</html>

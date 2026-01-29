@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Lịch hẹn - Clinic Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-primary mb-0">
+                <i class="fa-regular fa-calendar-check me-2"></i>Quản lý Lịch hẹn
+            </h3>
+            <button class="btn btn-primary shadow-sm" onclick="openBookingModal()">
+                <i class="fa-solid fa-plus me-2"></i>Đặt lịch mới
+            </button>
+        </div>
+
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted fw-bold mb-1">Chọn ngày xem:</label>
+                        <input type="date" id="filterDate" class="form-control" onchange="loadAppointments()">
+                    </div>
+                    <div class="col-md-8 text-end">
+                        <div class="d-inline-block p-2 bg-light rounded text-muted small">
+                            <i class="fa-solid fa-circle text-primary me-1"></i>Đã đặt
+                            <i class="fa-solid fa-circle text-warning ms-3 me-1"></i>Chờ khám
+                            <i class="fa-solid fa-circle text-success ms-3 me-1"></i>Hoàn thành
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-secondary">
+                            <tr>
+                                <th class="ps-4">Giờ hẹn</th>
+                                <th>Bệnh nhân</th>
+                                <th>Bác sĩ phụ trách</th>
+                                <th>Lý do khám</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Tác vụ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apptTableBody">
+                            <tr><td colspan="6" class="text-center py-5">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-calendar-plus me-2"></i>Đăng ký lịch hẹn mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="appointmentForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Số điện thoại</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-phone text-muted"></i></span>
+                                    <input type="text" id="patientPhone" class="form-control" placeholder="Nhập để tìm kiếm..." required>
+                                </div>
+                                <small class="text-muted" id="phoneHint">Nhập SĐT để tự động điền tên.</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Họ tên bệnh nhân</label>
+                                <input type="text" id="patientName" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Bác sĩ phụ trách</label>
+                                <select id="doctorSelect" class="form-select" required>
+                                    <option value="">-- Đang tải danh sách... --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Thời gian hẹn</label>
+                                <input type="datetime-local" id="apptTime" class="form-control" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Lý do khám / Triệu chứng</label>
+                                <textarea id="reason" class="form-control" rows="3" placeholder="Ví dụ: Tái khám, Đau đầu..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 text-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-success fw-bold px-4">
+                                <i class="fa-solid fa-check me-2"></i>Xác nhận đặt lịch
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="main.js"></script>
+    <script>
+        const API_HANDLER = 'http://localhost/clinic/api/api_handler.php';
+        // Khởi tạo Modal Bootstrap
+        let bookingModal; 
+
+        window.onload = function() {
+            // 1. Tải Sidebar
+            if(typeof loadSidebar === 'function') loadSidebar();
+            
+            // 2. Khởi tạo modal
+            const modalEl = document.getElementById('bookingModal');
+            if(modalEl) bookingModal = new bootstrap.Modal(modalEl);
+
+            // 3. Đặt ngày mặc định là hôm nay
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+
+            // 4. Tải dữ liệu
+            loadAppointments();
+            loadDoctorList();
+        };
+
+        // --- CÁC HÀM CHỨC NĂNG ---
+
+        // 1. Mở Modal đặt lịch
+        function openBookingModal() {
+            document.getElementById('appointmentForm').reset();
+            document.getElementById('patientName').readOnly = false;
+            document.getElementById('phoneHint').innerHTML = 'Nhập SĐT để tự động điền tên.';
+            if(bookingModal) bookingModal.show();
+        }
+
+        // 2. Tải danh sách lịch hẹn
+        async function loadAppointments() {
+            const date = document.getElementById('filterDate').value;
+            const tbody = document.getElementById('apptTableBody');
+            
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-primary"></i> Đang tải dữ liệu...</td></tr>';
+
+            try {
+                const res = await fetch(`http://localhost/clinic/api/get_appointments.php?date=${date}`);
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="fa-regular fa-calendar-xmark fa-2x mb-3"></i><br>Không có lịch hẹn nào trong ngày này.</td></tr>';
+                    return;
+                }
+
+                // Map trạng thái sang badge
+                const statusMap = {
+                    'scheduled': '<span class="badge bg-primary">Đã đặt</span>',
+                    'waiting': '<span class="badge bg-warning text-dark">Chờ khám</span>',
+                    'diagnosed': '<span class="badge bg-info">Đã khám</span>',
+                    'payment_pending': '<span class="badge bg-danger">Chờ thanh toán</span>',
+                    'completed': '<span class="badge bg-success">Hoàn thành</span>',
+                    'cancelled': '<span class="badge bg-secondary">Đã hủy</span>'
+                };
+
+                tbody.innerHTML = data.map(item => {
+                    const time = new Date(item.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                    
+                    // Nút thao tác tùy theo trạng thái
+                    let actionBtn = '';
+                    if (item.status === 'scheduled') {
+                        actionBtn = `
+                            <button class="btn btn-sm btn-success me-1" onclick="checkIn(${item.id})" title="Tiếp nhận">
+                                <i class="fa-solid fa-user-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAppointment(${item.id})" title="Hủy">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>`;
+                    } else if (item.status === 'waiting') {
+                        actionBtn = `<span class="text-muted small"><i class="fa-solid fa-clock"></i> Đợi BS</span>`;
+                    } else {
+                        actionBtn = `<button class="btn btn-sm btn-light border" title="Chi tiết"><i class="fa-solid fa-eye"></i></button>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">${time}</td>
+                            <td>
+                                <div class="fw-bold">${item.ten_benh_nhan}</div>
+                                <small class="text-muted"><i class="fa-solid fa-phone me-1"></i>${item.sdt_benh_nhan || '---'}</small>
+                            </td>
+                            <td>${item.ten_bac_si}</td>
+                            <td>${item.reason}</td>
+                            <td>${statusMap[item.status] || '<span class="badge bg-secondary">Khác</span>'}</td>
+                            <td class="text-center">${actionBtn}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Lỗi kết nối API</td></tr>';
+            }
+        }
+
+        // 3. Tải danh sách bác sĩ (Code an toàn, tránh lỗi)
+        async function loadDoctorList() {
+            const dSelect = document.getElementById('doctorSelect');
+            try {
+                const response = await fetch(`${API_HANDLER}?action=get_doctors`);
+                const text = await response.text();
+                
+                let doctors = [];
+                try {
+                    doctors = JSON.parse(text);
+                } catch(e) {
+                    console.error("Lỗi JSON:", text); // Debug nếu lỗi
+                }
+
+                if (!doctors || doctors.length === 0) {
+                    dSelect.innerHTML = '<option value="">-- Không có bác sĩ --</option>';
+                    return;
+                }
+
+                dSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>' + 
+                    doctors.map(d => `<option value="${d.id}">BS. ${d.full_name.replace(/^Bs\.\s/i, '')}</option>`).join('');
+            } catch (e) { 
+                console.error("Lỗi tải DS bác sĩ", e);
+                dSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+            }
+        }
+
+        // 4. Tra cứu SĐT tự động
+        document.getElementById('patientPhone').addEventListener('blur', async function() {
+            const phone = this.value.trim();
+            if(phone.length >= 10) {
+                try {
+                    const res = await fetch(`${API_HANDLER}?action=check_phone&phone=${phone}`);
+                    const data = await res.json();
+                    if(data && data.full_name) {
+                        document.getElementById('patientName').value = data.full_name;
+                        document.getElementById('patientName').readOnly = true;
+                        document.getElementById('phoneHint').innerHTML = '<span class="text-success"><i class="fa-solid fa-check-circle"></i> Đã tìm thấy bệnh nhân cũ</span>';
+                    } else {
+                        document.getElementById('patientName').value = '';
+                        document.getElementById('patientName').readOnly = false;
+                        document.getElementById('phoneHint').innerText = 'Bệnh nhân mới, vui lòng nhập tên.';
+                    }
+                } catch(e) {}
+            }
+        });
+
+        // 5. Gửi form đặt lịch
+        document.getElementById('appointmentForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = 'Đang xử lý...';
+
+            const data = {
+                patient_phone: document.getElementById('patientPhone').value,
+                patient_name: document.getElementById('patientName').value,
+                doctor_id: document.getElementById('doctorSelect').value,
+                start_time: document.getElementById('apptTime').value,
+                reason: document.getElementById('reason').value
+            };
+
+            try {
+                const res = await fetch(`${API_HANDLER}?action=save_appointment`, {
+                    method: 'POST', body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                
+                if(result.success) {
+                    alert("✅ Đặt lịch thành công!");
+                    bookingModal.hide();
+                    loadAppointments(); 
+                } else {
+                    alert("Có lỗi: " + (result.error || "Không xác định"));
+                }
+            } catch (e) { 
+                alert("Lỗi hệ thống!"); 
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check me-2"></i>Xác nhận đặt lịch';
+            }
+        };
+
+        // 6. Hàm Check-in (Tiếp nhận)
+        async function checkIn(id) {
+            if(!confirm("Xác nhận bệnh nhân đã đến và chuyển vào hàng chờ khám?")) return;
+            try {
+                const res = await fetch(`${API_HANDLER}?action=check_in`, {
+                    method: 'POST',
+                    body: JSON.stringify({ id: id })
+                });
+                const result = await res.json();
+                if(result.success) {
+                    alert("✅ Đã tiếp nhận thành công!");
+                    loadAppointments();
+                } else {
+                    alert("Lỗi: " + result.error);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // 7. Hàm Xóa lịch hẹn
+        async function deleteAppointment(id) {
+            if(!confirm("Bạn chắc chắn muốn hủy lịch hẹn này?")) return;
+            try {
+                const res = await fetch(`${API_HANDLER}?action=delete_appointment&id=${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if(result.success) {
+                    alert("Đã xóa.");
+                    loadAppointments();
+                }
+            } catch(e) { console.error(e); }
+        }
+    </script>
+</body>
+</html>

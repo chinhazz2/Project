@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bác sĩ - Clinic Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-primary mb-0">
+                <i class="fa-solid fa-user-doctor me-2"></i>Khu vực Bác sĩ
+            </h3>
+            <div class="text-muted">
+                <i class="fa-regular fa-calendar me-1"></i> Hôm nay: <span id="todayDate"></span>
+            </div>
+        </div>
+        
+        <ul class="nav nav-tabs mb-4 border-bottom-0" id="doctorTab" role="tablist">
+            <li class="nav-item me-2">
+                <button class="nav-link active shadow-sm border" id="exam-tab" data-bs-toggle="tab" data-bs-target="#exam" type="button">
+                    <i class="fa-solid fa-stethoscope me-2"></i>Khám bệnh & Chẩn đoán
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link shadow-sm border" id="presc-tab" data-bs-toggle="tab" data-bs-target="#presc" type="button">
+                    <i class="fa-solid fa-prescription-bottle-medical me-2"></i>Kê đơn thuốc
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="exam">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white text-primary fw-bold">
+                                <i class="fa-solid fa-list-ul me-2"></i>Danh sách chờ khám
+                            </div>
+                            <div class="list-group list-group-flush" id="waitingList">
+                                <div class="text-center p-4 text-muted">
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card shadow-sm h-100" id="examForm" style="display:none;">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <span><i class="fa-solid fa-user-injured me-2"></i>Đang khám: <b id="currentPatientName" class="text-warning">---</b></span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-4 p-3 bg-light rounded border">
+                                    <small class="text-muted fw-bold text-uppercase">Lý do khám:</small>
+                                    <p class="mb-0" id="currentReason">...</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Kết luận chẩn đoán <span class="text-danger">*</span></label>
+                                    <input type="text" id="diagnosis" class="form-control" placeholder="Nhập tên bệnh..." required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Ghi chú / Lời dặn</label>
+                                    <textarea id="notes" class="form-control" rows="4" placeholder="Ghi chú chi tiết về triệu chứng, lời dặn dò..."></textarea>
+                                </div>
+                                <div class="text-end">
+                                    <button onclick="saveDiagnosis()" class="btn btn-success px-4">
+                                        <i class="fa-solid fa-arrow-right me-2"></i>Lưu & Chuyển kê đơn
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm h-100 text-center py-5" id="examPlaceholder">
+                            <div class="card-body">
+                                <i class="fa-solid fa-user-clock fa-4x text-light mb-3"></i>
+                                <h5 class="text-muted">Chọn bệnh nhân từ danh sách để bắt đầu khám</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="presc">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white text-info fw-bold">
+                                <i class="fa-solid fa-file-prescription me-2"></i>Chờ kê đơn
+                            </div>
+                            <div class="list-group list-group-flush" id="diagnosedList">
+                                <div class="text-center p-4 text-muted">Đang tải...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card shadow-sm h-100" id="prescForm" style="display:none;">
+                            <div class="card-header bg-info text-white">
+                                <div class="d-flex justify-content-between">
+                                    <span><i class="fa-solid fa-pills me-2"></i>Kê đơn cho: <b id="prescPatientName">---</b></span>
+                                </div>
+                                <small class="text-white-50" id="prescDiagnosis"></small>
+                            </div>
+                            <div class="card-body">
+                                <div class="bg-light p-3 rounded mb-3 border">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-6">
+                                            <label class="small text-muted fw-bold">Chọn thuốc</label>
+                                            <select id="medSelect" class="form-select"></select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="small text-muted fw-bold">Số lượng</label>
+                                            <input type="number" id="medQty" class="form-control" value="1" min="1">
+                                        </div>
+                                        <div class="col-md-4">
+                                             <label class="small text-muted fw-bold">Cách dùng</label>
+                                             <div class="input-group">
+                                                <input type="text" id="medDose" class="form-control" placeholder="Sáng 1, Chiều 1...">
+                                                <button onclick="addMedicine()" class="btn btn-primary"><i class="fa-solid fa-plus"></i></button>
+                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-bordered table-striped align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tên thuốc</th>
+                                                <th>SL</th>
+                                                <th>Cách dùng</th>
+                                                <th>Thành tiền</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="prescTable"></tbody>
+                                    </table>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                                    <h5 class="mb-0 text-primary">Tổng: <span id="prescTotal">0</span> ₫</h5>
+                                    <button onclick="submitPrescription()" class="btn btn-success fw-bold">
+                                        <i class="fa-solid fa-paper-plane me-2"></i>Hoàn tất & Gửi Thu ngân
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div class="card shadow-sm h-100 text-center py-5" id="prescPlaceholder">
+                            <div class="card-body">
+                                <i class="fa-solid fa-file-medical fa-4x text-light mb-3"></i>
+                                <h5 class="text-muted">Chọn bệnh nhân đã chẩn đoán để kê đơn</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="main.js"></script>
+    <script>
+        document.getElementById('todayDate').innerText = new Date().toLocaleDateString('vi-VN');
+        
+        let currentApptId = null;
+        let currentEncounterId = null;
+        let prescriptionList = [];
+        let medicinesDB = [];
+
+        window.onload = async function() {
+            await loadSidebar();
+            loadWaitingList();
+            loadDiagnosedList();
+            loadMedicines();
+        };
+
+        // --- LOGIC TAB KHÁM BỆNH ---
+        async function loadWaitingList() {
+            try {
+                const res = await fetch('http://localhost/clinic/api/doctor_action.php?action=get_waiting');
+                const data = await res.json();
+                const list = document.getElementById('waitingList');
+                
+                if(data.length === 0) {
+                     list.innerHTML = '<div class="p-4 text-center text-muted"><i class="fa-solid fa-mug-hot fa-2x mb-2"></i><br>Không có bệnh nhân chờ</div>';
+                     return;
+                }
+                
+                list.innerHTML = data.map(p => `
+                    <button class="list-group-item list-group-item-action py-3" onclick="selectPatient(${p.appointment_id}, '${p.full_name}', '${p.reason}')">
+                        <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0 fw-bold text-primary">${p.full_name}</h6>
+                            <small class="badge bg-warning text-dark">Đang chờ</small>
+                        </div>
+                        <p class="mb-1 small text-muted"><i class="fa-solid fa-phone me-1"></i>${p.phone}</p>
+                        <small class="text-secondary fst-italic">"${p.reason}"</small>
+                    </button>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        function selectPatient(id, name, reason) {
+            currentApptId = id;
+            document.getElementById('currentPatientName').innerText = name;
+            document.getElementById('currentReason').innerText = reason;
+            
+            document.getElementById('examForm').style.display = 'block';
+            document.getElementById('examPlaceholder').style.display = 'none';
+        }
+
+        async function saveDiagnosis() {
+            const diag = document.getElementById('diagnosis').value;
+            if(!diag) { alert("Vui lòng nhập chẩn đoán!"); return; }
+
+            const data = {
+                appointment_id: currentApptId,
+                diagnosis: diag,
+                notes: document.getElementById('notes').value
+            };
+            
+            const res = await fetch('http://localhost/clinic/api/doctor_action.php?action=save_diagnosis', {
+                method: 'POST', body: JSON.stringify(data)
+            });
+            
+            if((await res.json()).success) {
+                alert("✅ Đã lưu chẩn đoán!");
+                // Reset form
+                document.getElementById('diagnosis').value = '';
+                document.getElementById('notes').value = '';
+                document.getElementById('examForm').style.display = 'none';
+                document.getElementById('examPlaceholder').style.display = 'block';
+                // Reload lists
+                loadWaitingList();
+                loadDiagnosedList();
+            }
+        }
+
+        // --- LOGIC TAB KÊ ĐƠN ---
+        async function loadMedicines() {
+            const res = await fetch('http://localhost/clinic/api/get_inventory.php');
+            medicinesDB = await res.json();
+            const select = document.getElementById('medSelect');
+            select.innerHTML = medicinesDB.map(m => `
+                <option value="${m.id}">${m.name} (${new Intl.NumberFormat('vi-VN').format(m.price)}đ)</option>
+            `).join('');
+        }
+
+        async function loadDiagnosedList() {
+            try {
+                const res = await fetch('http://localhost/clinic/api/doctor_action.php?action=get_diagnosed');
+                const data = await res.json();
+                const list = document.getElementById('diagnosedList');
+                
+                if(data.length === 0) {
+                     list.innerHTML = '<div class="p-4 text-center text-muted"><i class="fa-solid fa-check-circle fa-2x mb-2"></i><br>Hết đơn chờ</div>';
+                     return;
+                }
+
+                list.innerHTML = data.map(p => `
+                    <button class="list-group-item list-group-item-action py-3" onclick="selectPrescPatient(${p.encounter_id}, '${p.full_name}', '${p.diagnosis}')">
+                        <h6 class="mb-1 fw-bold">${p.full_name}</h6>
+                        <small class="text-success"><i class="fa-solid fa-stethoscope me-1"></i>${p.diagnosis}</small>
+                    </button>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        function selectPrescPatient(encId, name, diag) {
+            currentEncounterId = encId;
+            prescriptionList = [];
+            renderPrescTable();
+            document.getElementById('prescPatientName').innerText = name;
+            document.getElementById('prescDiagnosis').innerText = diag;
+            
+            document.getElementById('prescForm').style.display = 'block';
+            document.getElementById('prescPlaceholder').style.display = 'none';
+        }
+
+        function addMedicine() {
+            const medId = document.getElementById('medSelect').value;
+            const qty = parseInt(document.getElementById('medQty').value);
+            const dose = document.getElementById('medDose').value || 'Uống sau ăn';
+            const medInfo = medicinesDB.find(m => m.id == medId);
+
+            if(!medInfo) return;
+
+            prescriptionList.push({
+                id: medId,
+                name: medInfo.name,
+                price: parseFloat(medInfo.price),
+                qty: qty,
+                dose: dose
+            });
+            renderPrescTable();
+        }
+
+        function renderPrescTable() {
+            let total = 0;
+            document.getElementById('prescTable').innerHTML = prescriptionList.map((item, index) => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                return `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td class="text-center">${item.qty}</td>
+                        <td><small>${item.dose}</small></td>
+                        <td>${new Intl.NumberFormat('vi-VN').format(subtotal)}</td>
+                        <td class="text-center">
+                            <i class="fa-solid fa-trash text-danger" style="cursor:pointer" onclick="removeMed(${index})"></i>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            document.getElementById('prescTotal').innerText = new Intl.NumberFormat('vi-VN').format(total);
+        }
+        
+        function removeMed(index) {
+            prescriptionList.splice(index, 1);
+            renderPrescTable();
+        }
+
+        async function submitPrescription() {
+            if(prescriptionList.length === 0) {
+                alert("⚠️ Vui lòng thêm ít nhất 1 loại thuốc!");
+                return;
+            }
+
+            const data = {
+                encounter_id: currentEncounterId,
+                medicines: prescriptionList
+            };
+
+            const res = await fetch('http://localhost/clinic/api/doctor_action.php?action=save_prescription', {
+                method: 'POST', body: JSON.stringify(data)
+            });
+
+            if((await res.json()).success) {
+                alert("✅ Đã hoàn tất khám & gửi hóa đơn!");
+                loadDiagnosedList();
+                document.getElementById('prescForm').style.display = 'none';
+                document.getElementById('prescPlaceholder').style.display = 'block';
+                prescriptionList = [];
+            } else {
+                alert("❌ Lỗi hệ thống!");
+            }
+        }
+    </script>
+</body>
+</html>
