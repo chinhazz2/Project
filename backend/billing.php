@@ -10,9 +10,9 @@ if (!isset($_GET['encounter_id'])) {
 $encounterId = (int)$_GET['encounter_id'];
 
 try {
-    // Lưu ý: Đã đổi $db thành $conn
+    // Lưu ý: Đã đổi $db thành $pdo
     // 1. Lấy thuốc
-    $stmt = $conn->prepare("
+    $stmt = $pdo->prepare("
         SELECT 
             m.name,
             m.price,
@@ -32,19 +32,19 @@ try {
     }
 
     // 2. Kiểm tra invoice
-    $stmt = $conn->prepare("SELECT id FROM invoices WHERE encounter_id = ?");
+    $stmt = $pdo->prepare("SELECT id FROM invoices WHERE encounter_id = ?");
     $stmt->execute([$encounterId]);
     $invoice = $stmt->fetch();
 
     if (!$invoice) {
         // Tạo mới
-        $stmt = $conn->prepare("INSERT INTO invoices (encounter_id, total_amount, status) VALUES (?, ?, 'unpaid')");
+        $stmt = $pdo->prepare("INSERT INTO invoices (encounter_id, total_amount, status) VALUES (?, ?, 'unpaid')");
         $stmt->execute([$encounterId, $total]);
-        $invoiceId = $conn->lastInsertId();
+        $invoiceId = $pdo->lastInsertId();
     } else {
         // Cập nhật
         $invoiceId = $invoice['id'];
-        $stmt = $conn->prepare("UPDATE invoices SET total_amount = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE invoices SET total_amount = ? WHERE id = ?");
         $stmt->execute([$total, $invoiceId]);
     }
 
