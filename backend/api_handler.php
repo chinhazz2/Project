@@ -20,9 +20,9 @@ $username = "root";
 $password = "";
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $conn->exec("set names utf8mb4");
+    $pdo = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec("set names utf8mb4");
 } catch(PDOException $e) {
     die(json_encode(["error" => "Kết nối thất bại: " . $e->getMessage()]));
 }
@@ -34,19 +34,19 @@ $action = $_GET['action'] ?? '';
 if ($method == 'GET') {
     switch ($action) {
         case 'get_inventory': // Lấy danh sách kho thuốc
-            $stmt = $conn->query("SELECT * FROM medicines ORDER BY name ASC");
+            $stmt = $pdo->query("SELECT * FROM medicines ORDER BY name ASC");
             echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
             break;
 
         case 'check_phone': // Kiểm tra SĐT bệnh nhân
             $phone = $_GET['phone'] ?? '';
-            $stmt = $conn->prepare("SELECT full_name FROM patients WHERE phone = ? LIMIT 1");
+            $stmt = $pdo->prepare("SELECT full_name FROM patients WHERE phone = ? LIMIT 1");
             $stmt->execute([$phone]);
             echo json_encode($stmt->fetch(PDO::FETCH_ASSOC) ?: ["full_name" => null]);
             break;
 
         case 'get_doctors': // Lấy danh sách bác sĩ
-            $stmt = $conn->query("SELECT d.id, u.full_name FROM doctors d JOIN users u ON d.user_id = u.id");
+            $stmt = $pdo->query("SELECT d.id, u.full_name FROM doctors d JOIN users u ON d.user_id = u.id");
             echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
             break;
             
@@ -63,31 +63,31 @@ if ($method == 'POST') {
     if ($action == 'manage_medicine') { // Thêm/Sửa thuốc
         if (isset($data->id) && !empty($data->id)) {
             $sql = "UPDATE medicines SET name=?, code=?, unit=?, stock_qty=?, price=? WHERE id=?";
-            $stmt = $conn->prepare($sql);
+            $stmt = $pdo->prepare($sql);
             $stmt->execute([$data->name, $data->code, $data->unit, $data->stock_qty, $data->price, $data->id]);
         } else {
             $sql = "INSERT INTO medicines (name, code, unit, stock_qty, price) VALUES (?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($sql);
+            $stmt = $pdo->prepare($sql);
             $stmt->execute([$data->name, $data->code, $data->unit, $data->stock_qty, $data->price]);
         }
         echo json_encode(["success" => true]);
 
     } elseif ($action == 'save_appointment') { // Đặt lịch hẹn qua SĐT
         // Kiểm tra/Tạo bệnh nhân
-        $stmtP = $conn->prepare("SELECT id FROM patients WHERE phone = ? LIMIT 1");
+        $stmtP = $pdo->prepare("SELECT id FROM patients WHERE phone = ? LIMIT 1");
         $stmtP->execute([$data->patient_phone]);
         $patient = $stmtP->fetch(PDO::FETCH_ASSOC);
 
         if ($patient) {
             $patient_id = $patient['id'];
         } else {
-            $ins = $conn->prepare("INSERT INTO patients (full_name, phone) VALUES (?, ?)");
+            $ins = $pdo->prepare("INSERT INTO patients (full_name, phone) VALUES (?, ?)");
             $ins->execute([$data->patient_name, $data->patient_phone]);
-            $patient_id = $conn->lastInsertId();
+            $patient_id = $pdo->lastInsertId();
         }
         // Lưu lịch hẹn
         $sql = "INSERT INTO appointments (patient_id, doctor_id, start_time, reason, status) VALUES (?, ?, ?, ?, 'scheduled')";
-        $stmt = $conn->prepare($sql);
+        $stmt = $pdo->prepare($sql);
         $stmt->execute([$patient_id, $data->doctor_id, $data->start_time, $data->reason]);
         echo json_encode(["success" => true]);
     }
@@ -97,7 +97,7 @@ if ($method == 'POST') {
         
         // Cập nhật trạng thái từ 'scheduled' -> 'waiting'
         $sql = "UPDATE appointments SET status = 'waiting' WHERE id = ?";
-        $stmt = $conn->prepare($sql);
+        $stmt = $pdo->prepare($sql);
         
         if ($stmt->execute([$appt_id])) {
             echo json_encode(["success" => true, "message" => "Đã tiếp nhận bệnh nhân thành công"]);
@@ -111,7 +111,7 @@ if ($method == 'POST') {
 if ($method == 'DELETE') {
     $id = $_GET['id'] ?? null;
     if ($action == 'delete_medicine' && $id) {
-        $stmt = $conn->prepare("DELETE FROM medicines WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM medicines WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(["success" => true]);
     }
