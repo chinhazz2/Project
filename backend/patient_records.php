@@ -11,20 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 }
 
 // Kết nối database
-function getDBConnection() {
+function getDBpdoection() {
     $host = 'localhost';
     $dbname = 'clinic_db';
     $username = 'root';
     $password = '';
     
     try {
-        $conn = new PDO(
+        $pdo = new PDO(
             "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
             $username,
             $password,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
-        return $conn;
+        return $pdo;
     } catch(PDOException $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Kết nối database thất bại: ' . $e->getMessage()]);
@@ -32,22 +32,22 @@ function getDBConnection() {
     }
 }
 
-$conn = getDBConnection();
+$pdo = getDBpdoection();
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Xử lý các request
 switch($method) {
     case 'GET':
-        handleGet($conn);
+        handleGet($pdo);
         break;
     case 'POST':
-        handlePost($conn);
+        handlePost($pdo);
         break;
     case 'PUT':
-        handlePut($conn);
+        handlePut($pdo);
         break;
     case 'DELETE':
-        handleDelete($conn);
+        handleDelete($pdo);
         break;
     default:
         http_response_code(405);
@@ -55,13 +55,13 @@ switch($method) {
 }
 
 // Lấy danh sách bệnh nhân hoặc chi tiết 1 bệnh nhân
-function handleGet($conn) {
+function handleGet($pdo) {
     // Lấy chi tiết 1 bệnh nhân + lịch sử khám
     if(isset($_GET['id'])) {
         $id = intval($_GET['id']);
         
         // Thông tin bệnh nhân
-        $stmt = $conn->prepare("SELECT * FROM patients WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
         $stmt->execute([$id]);
         $patient = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -72,7 +72,7 @@ function handleGet($conn) {
         }
         
         // Lịch sử khám bệnh
-        $stmt = $conn->prepare("
+        $stmt = $pdo->prepare("
             SELECT 
                 e.id,
                 e.encounter_date,
@@ -91,7 +91,7 @@ function handleGet($conn) {
         $encounters = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Lịch hẹn sắp tới
-        $stmt = $conn->prepare("
+        $stmt = $pdo->prepare("
             SELECT 
                 a.id,
                 a.start_time,
@@ -123,7 +123,7 @@ function handleGet($conn) {
         
         if($search) {
             $searchTerm = "%$search%";
-            $stmt = $conn->prepare("
+            $stmt = $pdo->prepare("
                 SELECT * FROM patients 
                 WHERE full_name LIKE ? 
                    OR phone LIKE ? 
@@ -133,20 +133,20 @@ function handleGet($conn) {
             ");
             $stmt->execute([$searchTerm, $searchTerm, $searchTerm]);
             
-            $countStmt = $conn->prepare("
+            $countStmt = $pdo->prepare("
                 SELECT COUNT(*) as total FROM patients 
                 WHERE full_name LIKE ? OR phone LIKE ? OR insurance_no LIKE ?
             ");
             $countStmt->execute([$searchTerm, $searchTerm, $searchTerm]);
         } else {
-            $stmt = $conn->prepare("
+            $stmt = $pdo->prepare("
                 SELECT * FROM patients 
                 ORDER BY created_at DESC 
                 LIMIT $limit OFFSET $offset
             ");
             $stmt->execute([]);
             
-            $countStmt = $conn->query("SELECT COUNT(*) as total FROM patients");
+            $countStmt = $pdo->query("SELECT COUNT(*) as total FROM patients");
         }
         
         $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -163,7 +163,7 @@ function handleGet($conn) {
 }
 
 // Thêm bệnh nhân mới
-function handlePost($conn) {
+function handlePost($pdo) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     // Validate dữ liệu
@@ -174,7 +174,7 @@ function handlePost($conn) {
     }
     
     try {
-        $stmt = $conn->prepare("
+        $stmt = $pdo->prepare("
             INSERT INTO patients (full_name, dob, gender, phone, address, insurance_no, created_at)
             VALUES (?, ?, ?, ?, ?, ?, NOW())
         ");
@@ -188,10 +188,10 @@ function handlePost($conn) {
             $data['insurance_no'] ?? null
         ]);
         
-        $newId = $conn->lastInsertId();
+        $newId = $pdo->lastInsertId();
         
         // Lấy thông tin bệnh nhân vừa tạo
-        $stmt = $conn->prepare("SELECT * FROM patients WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
         $stmt->execute([$newId]);
         $patient = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -207,7 +207,7 @@ function handlePost($conn) {
 }
 
 // Cập nhật thông tin bệnh nhân
-function handlePut($conn) {
+function handlePut($pdo) {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if(empty($data['id'])) {
@@ -223,7 +223,7 @@ function handlePut($conn) {
     }
     
     try {
-        $stmt = $conn->prepare("
+        $stmt = $pdo->prepare("
             UPDATE patients 
             SET full_name = ?, dob = ?, gender = ?, phone = ?, address = ?, insurance_no = ?
             WHERE id = ?
@@ -240,7 +240,7 @@ function handlePut($conn) {
         ]);
         
         // Lấy thông tin đã cập nhật
-        $stmt = $conn->prepare("SELECT * FROM patients WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
         $stmt->execute([$data['id']]);
         $patient = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -255,7 +255,7 @@ function handlePut($conn) {
 }
 
 // Xóa bệnh nhân
-function handleDelete($conn) {
+function handleDelete($pdo) {
     if(!isset($_GET['id'])) {
         http_response_code(400);
         echo json_encode(['error' => 'ID bệnh nhân không hợp lệ']);
@@ -265,7 +265,7 @@ function handleDelete($conn) {
     $id = intval($_GET['id']);
     
     try {
-        $stmt = $conn->prepare("DELETE FROM patients WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM patients WHERE id = ?");
         $stmt->execute([$id]);
         
         if($stmt->rowCount() > 0) {
