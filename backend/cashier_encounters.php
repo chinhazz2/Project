@@ -18,7 +18,7 @@ try {
         ORDER BY e.encounter_date ASC
     ";
 
-    $stmt = $conn->query($sql);
+    $stmt = $pdo->query($sql);
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
