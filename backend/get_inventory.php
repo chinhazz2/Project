@@ -2,8 +2,8 @@
 
 require_once 'db.php';
 
-/** @var PDO $conn */  // <--- THÊM DÒNG NÀY VÀO
-// Dòng trên giúp VS Code hiểu $conn là một kết nối PDO
+/** @var PDO $pdo */  // <--- THÊM DÒNG NÀY VÀO
+// Dòng trên giúp VS Code hiểu $pdo là một kết nối PDO
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -11,7 +11,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method == 'GET') {
     try {
         $query = "SELECT id, name, code, unit, price, stock_qty FROM medicines ORDER BY name ASC";
-        $stmt = $conn->prepare($query);
+        $stmt = $pdo->prepare($query);
         $stmt->execute();
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($results ? $results : []);
@@ -24,7 +24,7 @@ if ($method == 'GET') {
 if ($method == 'DELETE') {
     $id = $_GET['id'] ?? null;
     if ($id) {
-        $stmt = $conn->prepare("DELETE FROM medicines WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM medicines WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(["success" => true]);
     }
@@ -46,7 +46,7 @@ if ($method == 'POST') {
         $params = [$data->name, $data->code, $data->unit, $data->stock_qty, $data->price];
     }
 
-    $stmt = $conn->prepare($sql);
+    $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     echo json_encode(["success" => true]);
     exit;
