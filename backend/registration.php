@@ -21,20 +21,20 @@ if ($method == 'POST') {
 
     try {
         // 1. Kiểm tra hoặc tạo bệnh nhân mới
-        $stmt = $conn->prepare("SELECT id FROM patients WHERE phone = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id FROM patients WHERE phone = ? LIMIT 1");
         $stmt->execute([$phone]);
         $patient = $stmt->fetch();
 
         if ($patient) {
             $patient_id = $patient['id'];
         } else {
-            $stmt = $conn->prepare("INSERT INTO patients (full_name, phone) VALUES (?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO patients (full_name, phone) VALUES (?, ?)");
             $stmt->execute([$full_name, $phone]);
-            $patient_id = $conn->lastInsertId();
+            $patient_id = $pdo->lastInsertId();
         }
 
         // 2. Tạo lượt khám (Status = waiting)
-        $stmt = $conn->prepare("
+        $stmt = $pdo->prepare("
             INSERT INTO appointments (patient_id, start_time, status, reason) 
             VALUES (?, NOW(), 'waiting', ?)
         ");
