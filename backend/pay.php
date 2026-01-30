@@ -17,11 +17,11 @@ $invoiceId = (int)$_POST['invoice_id'];
 $method = isset($_POST['method']) ? trim($_POST['method']) : 'Tiền mặt';
 
 try {
-    $conn->beginTransaction();
+    $pdo->beginTransaction();
 
     // 1. Lấy thông tin hóa đơn VÀ encounter_id để truy vết lịch hẹn
     // (Phần này rất quan trọng để tìm ra lịch hẹn gốc)
-    $stmt = $conn->prepare("
+    $stmt = $pdo->prepare("
         SELECT total_amount, status, encounter_id 
         FROM invoices 
         WHERE id = ? 
@@ -42,29 +42,29 @@ try {
     $encounterId = $invoice['encounter_id'];
 
     // 2. Ghi lịch sử thanh toán
-    $stmt = $conn->prepare("INSERT INTO payments (invoice_id, amount, method) VALUES (?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO payments (invoice_id, amount, method) VALUES (?, ?, ?)");
     $stmt->execute([$invoiceId, $amount, $method]);
 
     // 3. Cập nhật trạng thái HÓA ĐƠN -> paid
-    $stmt = $conn->prepare("UPDATE invoices SET status = 'paid', paid_at = NOW() WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE invoices SET status = 'paid', paid_at = NOW() WHERE id = ?");
     $stmt->execute([$invoiceId]);
 
     // 4. CẬP NHẬT TRẠNG THÁI LỊCH HẸN -> completed
     // (Đây là đoạn code bạn đang thiếu)
     if ($encounterId) {
         // Tìm appointment_id từ bảng encounters
-        $stmtEnc = $conn->prepare("SELECT appointment_id FROM encounters WHERE id = ?");
+        $stmtEnc = $pdo->prepare("SELECT appointment_id FROM encounters WHERE id = ?");
         $stmtEnc->execute([$encounterId]);
         $enc = $stmtEnc->fetch(PDO::FETCH_ASSOC);
 
         if ($enc && $enc['appointment_id']) {
             // Chuyển trạng thái lịch hẹn sang 'completed' (Hoàn thành)
-            $stmtAppt = $conn->prepare("UPDATE appointments SET status = 'completed' WHERE id = ?");
+            $stmtAppt = $pdo->prepare("UPDATE appointments SET status = 'completed' WHERE id = ?");
             $stmtAppt->execute([$enc['appointment_id']]);
         }
     }
 
-    $conn->commit();
+    $pdo->commit();
 
     echo json_encode([
         'success' => true,
@@ -73,8 +73,8 @@ try {
     ]);
 
 } catch (Exception $e) {
-    if ($conn->inTransaction()) {
-        $conn->rollBack();
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
     }
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
